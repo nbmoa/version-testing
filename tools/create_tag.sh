@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/bash -e
 
 createTag() {
     if [[ "$1" != "develop" ]] && [[ "$1" != "master" ]]; then
