@@ -1,6 +1,6 @@
 defaults: &defaults
-  machine:
-  working_directory: ~/iot-data-model
+  docker:
+    - image: circleci/golang:1.15
 
 version: 2.1
 commands:
@@ -20,7 +20,7 @@ jobs:
 workflows:
   test-tagging:
     jobs:
-      - create-tag:
+      - create-tags:
           filters:
             branches:
               only: 
