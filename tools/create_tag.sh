@@ -42,7 +42,7 @@ if [[ "${BRANCH_NAME}" == "develop" ]]; then
 elif [[ "${BRANCH_NAME}" == "master" ]]; then
     LAST_VERSION="$(git describe --tags --first-parent --exclude "*dev*" --abbrev=0)"
     CURR_COMMIT="$(git describe --tags --first-parent --exclude "*dev*")"
-    if [[ "${LAST_VERSION}" == "${CURR_COMMIT}" ]] then
+    if [[ "${LAST_VERSION}" == "${CURR_COMMIT}" ]]; then
         echo "INFO: This commit is already tagged with a release version"
         exit 0
     fi
