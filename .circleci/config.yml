@@ -1,6 +1,5 @@
 defaults: &defaults
   machine:
-    docker_layer_caching: true
   working_directory: ~/iot-data-model
 
 version: 2.1
@@ -21,7 +20,7 @@ jobs:
 workflows:
   test-tagging:
     jobs:
-      - test-tagging:
+      - create-tag:
           filters:
             branches:
               only: 
