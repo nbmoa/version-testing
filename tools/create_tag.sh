@@ -13,8 +13,7 @@ createTag() {
     NEW_TAG="$2"
     echo "Tagging branch ${BRANCH_TO_TAG} with ${NEW_TAG}"
     git tag -a -m "Created tag ${NEW_TAG}" "${NEW_TAG}" "${BRANCH_TO_TAG}"
-    # TBD MOA 
-    echo git push -u origin "${NEW_TAG}"
+    git push -u origin "${NEW_TAG}"
 }
 
 # retrieve branch name
