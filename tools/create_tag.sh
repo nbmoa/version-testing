@@ -10,7 +10,7 @@ createTag() {
         echo "ERROR: no tag given"
         exit 1
     fi
-    if "$3" == "clean-checkout" ]] ; then
+    if [[ "$3" == "clean-checkout" ]] ; then
         git clone -b ${BRANCH_TO_TAG} $(git remote get-url origin) tagging
         cd tagging
     fi
@@ -18,7 +18,7 @@ createTag() {
     echo "Tagging branch ${BRANCH_TO_TAG} with ${NEW_TAG}"
     git tag -a -m "Created tag ${NEW_TAG}" "${NEW_TAG}"
     git push -u origin "${NEW_TAG}"
-    if "$3" == "clean-checkout" ]] ; then
+    if [[ "$3" == "clean-checkout" ]] ; then
         cd ..
         rm -rf tagging
     fi
