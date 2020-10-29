@@ -38,13 +38,18 @@ getReleaseType() {
 # retrieve branch name
 BRANCH_NAME="$(git branch | sed -n '/\* /s///p')"
 if [[ "${BRANCH_NAME}" == "develop" ]]; then
-    VERSION="$(git describe --tags --first-parent --match "*dev*" --abbrev=0)"
+    LAST_VERSION="$(git describe --tags --first-parent --match "*dev*" --abbrev=0)"
 elif [[ "${BRANCH_NAME}" == "master" ]]; then
-    VERSION="$(git describe --tags --first-parent --exclude "*dev*" --abbrev=0)"
+    LAST_VERSION="$(git describe --tags --first-parent --exclude "*dev*" --abbrev=0)"
+    CURR_COMMIT="$(git describe --tags --first-parent --exclude "*dev*")"
+    if [[ "${LAST_VERSION}" == "${CURR_COMMIT}" ]] then
+        echo "INFO: This commit is already tagged with a release version"
+        exit 0
+    fi
 fi
 
 # split into array
-VERSION_BITS=(${VERSION//./ })
+VERSION_BITS=(${LAST_VERSION//./ })
 
 #get number parts and increase last one by 1
 VNUM1="${VERSION_BITS[0]}"
@@ -56,7 +61,7 @@ if [[ "${BRANCH_NAME}" == "develop" ]]; then
     VNUM4="$((VNUM4+1))"
     #create new tag
     NEW_VERSION="${VNUM1}.${VNUM2}.0-dev.${VNUM4}"
-    echo "Updating ${VERSION} to ${NEW_VERSION}"
+    echo "Updating ${LAST_VERSION} to ${NEW_VERSION}"
     createTag "develop" "${NEW_VERSION}"
 elif [[ "${BRANCH_NAME}" == "master" ]]; then
     RELEASE_TYPE="$(getReleaseType)"
