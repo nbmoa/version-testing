@@ -75,7 +75,8 @@ elif [[ "${BRANCH_NAME}" == "master" ]]; then
         createTag "master" "${NEW_MASTER_VERSION}"
         createTag "develop" "${NEW_DEVELOP_VERSION}" "clean-checkout"
     elif [[ "${RELEASE_TYPE}" == "release-major" ]]; then
-        VNUM1="v$((VNUM1+1))"
+        VNUM1_CLEANED="${VNUM1##v}"
+        VNUM1="v$((VNUM1_CLEANED+1))"
         #create new tag
         NEW_MASTER_VERSION="${VNUM1}.0.1"
         NEW_DEVELOP_VERSION="${VNUM1}.0.0-dev.0"
