@@ -62,9 +62,9 @@ elif [[ "${BRANCH_NAME}" == "master" ]]; then
         NEW_DEVELOP_VERSION="${VNUM1}.${VNUM2}.0-dev.0"
         echo "Creating new minor release ${NEW_MASTER_VERSION}"
         createTag "master" "${NEW_MASTER_VERSION}"
-        git checkout develop
-        createTag "develop" "${NEW_DEVELOP_VERSION}"
-        git checkout master
+#        git checkout develop
+#        createTag "develop" "${NEW_DEVELOP_VERSION}"
+#        git checkout master
     elif [[ "${RELEASE_TYPE}" == "release-major" ]]; then
         VNUM1="$((VNUM1+1))"
         #create new tag
@@ -72,9 +72,9 @@ elif [[ "${BRANCH_NAME}" == "master" ]]; then
         NEW_DEVELOP_VERSION="${VNUM1}.0.0-dev.0"
         echo "Creating new major release ${NEW_MASTER_VERSION}"
         createTag "master" "${NEW_MASTER_VERSION}"
-        git checkout develop
-        createTag "develop" "${NEW_DEVELOP_VERSION}"
-        git checkout master
+#        git checkout develop
+#        createTag "develop" "${NEW_DEVELOP_VERSION}"
+#        git checkout master
     else
         echo "INFO: this commit has no release-patch, release-minor or release-major specified, not creating a new release version"
         exit 0
