@@ -33,6 +33,7 @@ getReleaseType() {
             return
         fi
     done
+    echo "release-patch"
 }
 
 # retrieve branch name
@@ -43,7 +44,7 @@ elif [[ "${BRANCH_NAME}" == "master" ]]; then
     LAST_VERSION="$(git describe --tags --first-parent --exclude "*dev*" --abbrev=0)"
     CURR_COMMIT="$(git describe --tags --first-parent --exclude "*dev*")"
     if [[ "${LAST_VERSION}" == "${CURR_COMMIT}" ]]; then
-        echo "INFO: This commit is already tagged with a release version"
+        echo "INFO: This commit is already the release ${LAST_VERSION}"
         exit 0
     fi
 fi
