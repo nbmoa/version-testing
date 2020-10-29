@@ -16,6 +16,17 @@ createTag() {
     git push -u origin "${NEW_TAG}"
 }
 
+getReleaseType() {
+    LAST_LOG="$(git log -n 1 --pretty=format:'%s%n%n%b')"
+    for TYPE in "release-patch" "release-minor" "release-major"; do
+        FOUND_TYPE=$(echo "${LAST_LOG}" | grep "${TYPE}")
+        if [[ -n "${FOUND_TYPE}" ]]; then
+            echo "${TYPE}"
+            return
+        fi
+    done
+}
+
 # retrieve branch name
 BRANCH_NAME="$(git branch | sed -n '/\* /s///p')"
 VERSION="$(git describe --tags --first-parent --abbrev=0)"
@@ -36,13 +47,14 @@ if [[ "${BRANCH_NAME}" == "develop" ]]; then
     echo "Updating ${VERSION} to ${NEW_VERSION}"
     createTag "develop" "${NEW_VERSION}"
 elif [[ "${BRANCH_NAME}" == "master" ]]; then
-    if [[ "${1}" == "patch" ]]; then
+    RELEASE_TYPE="$(getReleaseType)"
+    if [[ "${RELEASE_TYPE}" == "release-patch" ]]; then
         VNUM3="$((VNUM3+1))"
         #create new tag
         NEW_VERSION="${VNUM1}.${VNUM2}.${VNUM3}"
         echo "Creating new patch release ${NEW_VERSION}"
         createTag "master" "${NEW_VERSION}"
-    elif [[ "${1}" == "minor" ]]; then
+    elif [[ "${RELEASE_TYPE}" == "release-minor" ]]; then
         VNUM2="$((VNUM2+1))"
         #create new tag
         NEW_MASTER_VERSION="${VNUM1}.${VNUM2}.1"
@@ -50,7 +62,7 @@ elif [[ "${BRANCH_NAME}" == "master" ]]; then
         echo "Creating new minor release ${NEW_MASTER_VERSION}"
         createTag "master" "${NEW_MASTER_VERSION}"
         createTag "develop" "${NEW_DEVELOP_VERSION}"
-    elif [[ "${1}" == "major" ]]; then
+    elif [[ "${RELEASE_TYPE}" == "release-major" ]]; then
         VNUM1="$((VNUM1+1))"
         #create new tag
         NEW_MASTER_VERSION="${VNUM1}.0.1"
@@ -59,8 +71,8 @@ elif [[ "${BRANCH_NAME}" == "master" ]]; then
         createTag "master" "${NEW_MASTER_VERSION}"
         createTag "develop" "${NEW_DEVELOP_VERSION}"
     else
-        echo "ERROR: for master branches patch, minor or major parameter needs to be specified"
-        exit 1
+        echo "INFO: this commit has no release-patch, release-minor or release-major specified, not creating a new release version"
+        exit 0
     fi
 else
     echo "ERROR: this script is only allowed to be called for branches develop and master"
