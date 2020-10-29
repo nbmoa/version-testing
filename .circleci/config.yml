@@ -1,0 +1,63 @@
+defaults: &defaults
+  machine:
+    docker_layer_caching: true
+  working_directory: ~/iot-data-model
+
+version: 2.1
+commands:
+  install_hub:
+    description: "install hub"
+    steps:
+      - run:
+          name: install hub
+          command: |
+            wget -O hub.tgz https://github.com/github/hub/releases/download/v2.12.1/hub-linux-amd64-2.12.1.tgz
+            tar -xzf hub.tgz && sudo cp hub-linux-amd64-2.12.1/bin/hub /usr/local/bin/hub && rm hub.tgz && rm -R hub-linux-amd64-2.12.1
+
+jobs:
+  integration-tests:
+    <<: *defaults
+    steps:
+      - checkout
+      - run:
+          name: generate protos
+          command: make -l generate
+  deploy-dev-npm-package:
+    <<: *defaults
+    steps:
+      - checkout
+      - run:
+          name: deploy development npm package
+          command: |
+            make generate
+            cp tools/npm-config/{package.json,.npmrc} output/js
+            cd output/js
+            npm version `git describe`
+            npm publish  --tag=canary
+
+  deploy-master:
+    <<: *defaults
+    steps:
+      - checkout
+      - run:
+          name: open pull-requests
+          command: |
+            git config --global user.email "circleci@infarm.com"
+            git config --global user.name "circle-ci"
+            make open-pull-requests
+
+workflows:
+  check_and_deploy:
+    jobs:
+      - integration-tests
+      - deploy-master:
+          requires:
+            - integration-tests
+          filters:
+            branches:
+              only: develop
+      - deploy-dev-npm-package:
+          filters:
+            branches:
+              only: develop
+
