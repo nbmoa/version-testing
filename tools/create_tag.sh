@@ -47,6 +47,8 @@ if [[ "${BRANCH_NAME}" == "develop" ]]; then
     echo "Updating ${VERSION} to ${NEW_VERSION}"
     createTag "develop" "${NEW_VERSION}"
 elif [[ "${BRANCH_NAME}" == "master" ]]; then
+    git checkout develop
+    git checkout master
     RELEASE_TYPE="$(getReleaseType)"
     if [[ "${RELEASE_TYPE}" == "release-patch" ]]; then
         VNUM3="$((VNUM3+1))"
