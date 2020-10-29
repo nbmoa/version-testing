@@ -10,10 +10,14 @@ createTag() {
         echo "ERROR: no tag given"
         exit 1
     fi
+    git clone -b ${BRANCH_TO_TAG} $(git remote get-url origin) tagging
+    cd tagging
     NEW_TAG="$2"
     echo "Tagging branch ${BRANCH_TO_TAG} with ${NEW_TAG}"
-    git tag -a -m "Created tag ${NEW_TAG}" "${NEW_TAG}" "${BRANCH_TO_TAG}"
+    git tag -a -m "Created tag ${NEW_TAG}" "${NEW_TAG}"
     git push -u origin "${NEW_TAG}"
+    cd ..
+    rm -rf tagging
 }
 
 getReleaseType() {
@@ -29,7 +33,11 @@ getReleaseType() {
 
 # retrieve branch name
 BRANCH_NAME="$(git branch | sed -n '/\* /s///p')"
-VERSION="$(git describe --tags --first-parent --abbrev=0)"
+if [[ "${BRANCH_NAME}" == "develop" ]]; then
+    VERSION="$(git describe --tags --first-parent --match "*dev*" --abbrev=0)"
+elif [[ "${BRANCH_NAME}" == "master" ]]; then
+    VERSION="$(git describe --tags --first-parent --exclude "*dev*" --abbrev=0)"
+fi
 
 # split into array
 VERSION_BITS=(${VERSION//./ })
@@ -61,9 +69,7 @@ elif [[ "${BRANCH_NAME}" == "master" ]]; then
         NEW_DEVELOP_VERSION="${VNUM1}.${VNUM2}.0-dev.0"
         echo "Creating new minor release ${NEW_MASTER_VERSION}"
         createTag "master" "${NEW_MASTER_VERSION}"
-#        git checkout develop
-#        createTag "develop" "${NEW_DEVELOP_VERSION}"
-#        git checkout master
+        createTag "develop" "${NEW_DEVELOP_VERSION}"
     elif [[ "${RELEASE_TYPE}" == "release-major" ]]; then
         VNUM1="$((VNUM1+1))"
         #create new tag
@@ -71,9 +77,7 @@ elif [[ "${BRANCH_NAME}" == "master" ]]; then
         NEW_DEVELOP_VERSION="${VNUM1}.0.0-dev.0"
         echo "Creating new major release ${NEW_MASTER_VERSION}"
         createTag "master" "${NEW_MASTER_VERSION}"
-#        git checkout develop
-#        createTag "develop" "${NEW_DEVELOP_VERSION}"
-#        git checkout master
+        createTag "develop" "${NEW_DEVELOP_VERSION}"
     else
         echo "INFO: this commit has no release-patch, release-minor or release-major specified, not creating a new release version"
         exit 0
@@ -82,3 +86,4 @@ else
     echo "ERROR: this script is only allowed to be called for branches develop and master"
     exit 1
 fi
+git pull
