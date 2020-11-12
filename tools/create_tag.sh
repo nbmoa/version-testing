@@ -38,7 +38,6 @@ BRANCH_NAME="$(git branch | sed -n '/\* /s///p')"
 if [[ "${BRANCH_NAME}" == "develop" ]]; then
     LAST_VERSION="$(git describe --tags --first-parent --match "*dev*" --abbrev=0 || true)"
     LAST_RC_VERSION="$(git describe --tags --match "*rc*" origin/staging || true)"
-    echo LAST_VERSION=$LAST_VERSION LAST_RC_VERSION=$LAST_RC_VERSION
     if [[ -z "${LAST_RC_VERSION}" ]]; then
         LAST_RC_VERSION=v0.0.0-rc.0
     else
@@ -50,9 +49,9 @@ if [[ "${BRANCH_NAME}" == "develop" ]]; then
             LAST_VERSION=v0.0.0-dev.0
         fi
     fi
-    # Handle the special case that the RC was preparing a new major or minor release
-    # Then we need to take the RC candidate version as latest version
-    if [[ "$(${0%/*}/cmp-semver.sh ${LAST_VERSION} ${LAST_RC_VERSION})" == "-1" ]]; then
+    # Handle the special case that the last RC was preparing a new major or minor release
+    # if RC version is has a higher base, continue with the base RC version
+    if [[ "$(${0%/*}/cmp-semver.sh ${LAST_VERSION%-rc*} ${LAST_RC_VERSION%-dev*})" == "-1" ]]; then
         LAST_VERSION="${LAST_RC_VERSION}"
     fi
 elif [[ "${BRANCH_NAME}" == "staging" ]]; then
