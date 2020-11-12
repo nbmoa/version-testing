@@ -61,6 +61,7 @@ elif [[ "${BRANCH_NAME}" == "staging" ]]; then
     fi
 elif [[ "${BRANCH_NAME}" == "master" ]]; then
     LAST_VERSION="$(git describe --tags --first-parent --exclude "*dev*" --exclude "*rc*"  --abbrev=0 || true)"
+    LAST_RC_VERSION="$(git describe --tags --first-parent --match "*rc*" --abbrev=0 || true)"
     CURR_COMMIT="$(git describe --tags --first-parent --exclude "*dev*" --exclude "*rc*" || true)"
     if [[ -z "${LAST_VERSION}" ]]; then
         LAST_VERSION="$(git describe --tags --first-parent  --abbrev=0 || true)"
@@ -72,6 +73,11 @@ elif [[ "${BRANCH_NAME}" == "master" ]]; then
     if [[ "${LAST_VERSION}" == "${CURR_COMMIT}" ]]; then
         echo "INFO: This commit is already the release ${LAST_VERSION}"
         exit 0
+    fi
+    # Handle the special case that the RC was preparing a new major or minor release
+    # Then we need to take the RC candidate version as latest version
+    if [[ "$(./${0%/*}/cmp-semver.sh ${LAST_VERSION} ${LAST_RC_VERSION})" == "-1" ]]; then
+        LAST_VERSION="${LAST_RC_VERSION}"
     fi
 elif [[ "${BRANCH_NAME}" == "test-ci" ]]; then
     LAST_VERSION="$(git describe --tags --first-parent --match "*test*" --abbrev=0 || true)"
