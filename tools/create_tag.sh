@@ -52,7 +52,7 @@ if [[ "${BRANCH_NAME}" == "develop" ]]; then
     # Handle the special case that the last RC was preparing a new major or minor release
     # if RC version is has a higher base, continue with the base RC version
     echo ${0%/*}/cmp-semver.sh ${LAST_VERSION%-rc*} ${LAST_RC_VERSION%-dev*}
-    if [[ "$(${0%/*}/cmp-semver.sh ${LAST_VERSION%-rc*} ${LAST_RC_VERSION%-dev*})" == "-1" ]]; then
+    if [[ "$(${0%/*}/cmp-semver.sh ${LAST_VERSION%-dev*} ${LAST_RC_VERSION%-rc*})" == "-1" ]]; then
         LAST_VERSION="${LAST_RC_VERSION}"
     fi
 elif [[ "${BRANCH_NAME}" == "staging" ]]; then
