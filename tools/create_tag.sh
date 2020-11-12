@@ -38,7 +38,6 @@ BRANCH_NAME="$(git branch | sed -n '/\* /s///p')"
 if [[ "${BRANCH_NAME}" == "develop" ]]; then
     LAST_VERSION="$(git describe --tags --first-parent --match "*dev*" --abbrev=0 || true)"
     LAST_RC_VERSION="$(git describe --tags --match "*rc*" origin/staging || true)"
-    echo LAST_VERSION=$LAST_VERSION LAST_RC_VERSION=$LAST_RC_VERSION
     if [[ -z "${LAST_RC_VERSION}" ]]; then
         LAST_RC_VERSION=v0.0.0-rc.0
     else
@@ -47,12 +46,13 @@ if [[ "${BRANCH_NAME}" == "develop" ]]; then
     if [[ -z "${LAST_VERSION}" ]]; then
         LAST_VERSION="$(git describe --tags --first-parent  --abbrev=0 || true)"
         if [[ -z "${LAST_VERSION}" ]]; then
-            LAST_VERSION=v0.0.0
+            LAST_VERSION=v0.0.0-dev.0
         fi
     fi
-    # Handle the special case that the RC was preparing a new major or minor release
-    # Then we need to take the RC candidate version as latest version
-    if [[ "$(${0%/*}/cmp-semver.sh ${LAST_VERSION} ${LAST_RC_VERSION})" == "-1" ]]; then
+    # Handle the special case that the last RC was preparing a new major or minor release
+    # if RC version is has a higher base, continue with the base RC version
+    echo ${0%/*}/cmp-semver.sh ${LAST_VERSION%-rc*} ${LAST_RC_VERSION%-dev*}
+    if [[ "$(${0%/*}/cmp-semver.sh ${LAST_VERSION%-dev*} ${LAST_RC_VERSION%-rc*})" == "-1" ]]; then
         LAST_VERSION="${LAST_RC_VERSION}"
     fi
 elif [[ "${BRANCH_NAME}" == "staging" ]]; then
@@ -60,7 +60,7 @@ elif [[ "${BRANCH_NAME}" == "staging" ]]; then
     if [[ -z "${LAST_VERSION}" ]]; then
         LAST_VERSION="$(git describe --tags --first-parent  --abbrev=0 || true)"
         if [[ -z "${LAST_VERSION}" ]]; then
-            LAST_VERSION=v0.0.0
+            LAST_VERSION=v0.0.0-rc.0
         fi
     fi
 elif [[ "${BRANCH_NAME}" == "master" ]]; then
@@ -119,14 +119,14 @@ elif [[ "${BRANCH_NAME}" == "staging" ]]; then
     elif [[ "${ACTION_TYPE}" == "create-minor-rc" ]]; then
         VNUM2="$((VNUM2+1))"
         #create new tag
-        NEW_STAGING_VERSION="${VNUM1}.${VNUM2}.0-rc.0"
+        NEW_STAGING_VERSION="${VNUM1}.${VNUM2}.0-rc.1"
         echo "Creating new minor release ${NEW_STAGING_VERSION}"
         createTag "${BRANCH_NAME}" "${NEW_STAGING_VERSION}"
     elif [[ "${ACTION_TYPE}" == "create-major-rc" ]]; then
         VNUM1_CLEANED="${VNUM1##v}"
         VNUM1="v$((VNUM1_CLEANED+1))"
         #create new tag
-        NEW_STAGING_VERSION="${VNUM1}.0.0-rc.0"
+        NEW_STAGING_VERSION="${VNUM1}.0.0-rc.1"
         echo "Creating new major release ${NEW_STAGING_VERSION}"
         createTag "${BRANCH_NAME}" "${NEW_STAGING_VERSION}"
     else
