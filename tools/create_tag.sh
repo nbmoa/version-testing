@@ -36,7 +36,7 @@ getActionType() {
 # if no proper tag for the branch was found, search in a more generic way and if still no tag was found, assume v0.0.0
 BRANCH_NAME="$(git branch | sed -n '/\* /s///p')"
 if [[ "${BRANCH_NAME}" == "develop" ]]; then
-    LAST_VERSION="$(git describe --tags --first-parent --match "*dev*" --abbrev=0 || true)"
+    LAST_VERSION="$(git describe --tags --match "*dev*" --abbrev=0 || true)"
     LAST_RC_VERSION="$(git describe --tags --match "*rc*" origin/staging || true)"
     if [[ -z "${LAST_RC_VERSION}" ]]; then
         LAST_RC_VERSION=v0.0.0-rc.0
@@ -44,7 +44,7 @@ if [[ "${BRANCH_NAME}" == "develop" ]]; then
         LAST_RC_VERSION=${LAST_RC_VERSION%-rc.*}-rc.0
     fi
     if [[ -z "${LAST_VERSION}" ]]; then
-        LAST_VERSION="$(git describe --tags --first-parent  --abbrev=0 || true)"
+        LAST_VERSION="$(git describe --tags --abbrev=0 || true)"
         if [[ -z "${LAST_VERSION}" ]]; then
             LAST_VERSION=v0.0.0-dev.0
         fi
@@ -56,19 +56,19 @@ if [[ "${BRANCH_NAME}" == "develop" ]]; then
         LAST_VERSION="${LAST_RC_VERSION}"
     fi
 elif [[ "${BRANCH_NAME}" == "staging" ]]; then
-    LAST_VERSION="$(git describe --tags --first-parent --match "*rc*" --abbrev=0 || true)"
+    LAST_VERSION="$(git describe --tags --match "*rc*" --abbrev=0 || true)"
     if [[ -z "${LAST_VERSION}" ]]; then
-        LAST_VERSION="$(git describe --tags --first-parent  --abbrev=0 || true)"
+        LAST_VERSION="$(git describe --tags  --abbrev=0 || true)"
         if [[ -z "${LAST_VERSION}" ]]; then
             LAST_VERSION=v0.0.0-rc.0
         fi
     fi
 elif [[ "${BRANCH_NAME}" == "master" ]]; then
-    LAST_VERSION="$(git describe --tags --first-parent --exclude "*dev*" --exclude "*rc*"  --abbrev=0 || true)"
+    LAST_VERSION="$(git describe --tags --exclude "*dev*" --exclude "*rc*"  --abbrev=0 || true)"
     LAST_RC_VERSION="$(git describe --tags --match "*rc*" --abbrev=0 || true)"
-    CURR_COMMIT="$(git describe --tags --first-parent --exclude "*dev*" --exclude "*rc*" || true)"
+    CURR_COMMIT="$(git describe --tags --exclude "*dev*" --exclude "*rc*" || true)"
     if [[ -z "${LAST_VERSION}" ]]; then
-        LAST_VERSION="$(git describe --tags --first-parent  --abbrev=0 || true)"
+        LAST_VERSION="$(git describe --tags --abbrev=0 || true)"
         if [[ -z "${LAST_VERSION}" ]]; then
             LAST_VERSION=v0.0.0
         fi
@@ -84,9 +84,9 @@ elif [[ "${BRANCH_NAME}" == "master" ]]; then
         LAST_VERSION="${LAST_RC_VERSION}"
     fi
 elif [[ "${BRANCH_NAME}" == "test-ci" ]]; then
-    LAST_VERSION="$(git describe --tags --first-parent --match "*test*" --abbrev=0 || true)"
+    LAST_VERSION="$(git describe --tags --match "*test*" --abbrev=0 || true)"
     if [[ -z "${LAST_VERSION}" ]]; then
-        LAST_VERSION="$(git describe --tags --first-parent  --abbrev=0 || true)"
+        LAST_VERSION="$(git describe --tags --abbrev=0 || true)"
         if [[ -z "${LAST_VERSION}" ]]; then
             LAST_VERSION=v0.0.0
         fi
