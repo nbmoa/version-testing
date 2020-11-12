@@ -41,7 +41,7 @@ if [[ "${BRANCH_NAME}" == "develop" ]]; then
     if [[ -z "${LAST_RC_VERSION}" ]]; then
         LAST_RC_VERSION=v0.0.0-rc.0
     else
-        LAST_RC_VERSION=${LAST_RC_VERSION#-rc.*}-rc.0
+        LAST_RC_VERSION=${LAST_RC_VERSION%-rc.*}-rc.0
     fi
     if [[ -z "${LAST_VERSION}" ]]; then
         LAST_VERSION="$(git describe --tags --first-parent  --abbrev=0 || true)"
