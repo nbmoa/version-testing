@@ -37,12 +37,6 @@ getActionType() {
 BRANCH_NAME="$(git branch | sed -n '/\* /s///p')"
 if [[ "${BRANCH_NAME}" == "develop" ]]; then
     LAST_VERSION="$(git describe --tags --match "*dev*" --abbrev=0 || true)"
-    LAST_RC_VERSION="$(git describe --tags --match "*rc*" origin/staging || true)"
-    if [[ -z "${LAST_RC_VERSION}" ]]; then
-        LAST_RC_VERSION=v0.0.0-rc.0
-    else
-        LAST_RC_VERSION=${LAST_RC_VERSION%-rc.*}-rc.0
-    fi
     if [[ -z "${LAST_VERSION}" ]]; then
         LAST_VERSION="$(git describe --tags --abbrev=0 || true)"
         if [[ -z "${LAST_VERSION}" ]]; then
@@ -51,7 +45,13 @@ if [[ "${BRANCH_NAME}" == "develop" ]]; then
     fi
     # Handle the special case that the last RC was preparing a new major or minor release
     # if RC version is has a higher base, continue with the base RC version
-    echo ${0%/*}/cmp-semver.sh ${LAST_VERSION%-rc*} ${LAST_RC_VERSION%-dev*}
+    LAST_RC_VERSION="$(git describe --tags --match "*rc*" origin/staging || true)"
+    if [[ -z "${LAST_RC_VERSION}" ]]; then
+        LAST_RC_VERSION=v0.0.0-rc.0
+    else
+        # reset N to 0 so if we use the rc version we start again with dev.1
+        LAST_RC_VERSION=${LAST_RC_VERSION%-rc.*}-rc.0
+    fi
     if [[ "$(${0%/*}/cmp-semver.sh ${LAST_VERSION%-dev*} ${LAST_RC_VERSION%-rc*})" == "-1" ]]; then
         LAST_VERSION="${LAST_RC_VERSION}"
     fi
@@ -65,7 +65,6 @@ elif [[ "${BRANCH_NAME}" == "staging" ]]; then
     fi
 elif [[ "${BRANCH_NAME}" == "master" ]]; then
     LAST_VERSION="$(git describe --tags --exclude "*dev*" --exclude "*rc*"  --abbrev=0 || true)"
-    LAST_RC_VERSION="$(git describe --tags --match "*rc*" --abbrev=0 || true)"
     CURR_COMMIT="$(git describe --tags --exclude "*dev*" --exclude "*rc*" || true)"
     if [[ -z "${LAST_VERSION}" ]]; then
         LAST_VERSION="$(git describe --tags --abbrev=0 || true)"
@@ -80,6 +79,7 @@ elif [[ "${BRANCH_NAME}" == "master" ]]; then
     fi
     # Handle the special case that the RC was preparing a new major or minor release
     # Then we need to take the RC candidate version as latest version
+    LAST_RC_VERSION="$(git describe --tags --match "*rc*" --abbrev=0 || true)"
     if [[ "$(${0%/*}/cmp-semver.sh ${LAST_VERSION} ${LAST_RC_VERSION})" == "-1" ]]; then
         LAST_VERSION="${LAST_RC_VERSION}"
     fi
