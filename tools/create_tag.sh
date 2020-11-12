@@ -115,7 +115,7 @@ elif [[ "${BRANCH_NAME}" == "staging" ]]; then
     elif [[ "${ACTION_TYPE}" == "create-minor-rc" ]]; then
         VNUM2="$((VNUM2+1))"
         #create new tag
-        NEW_STAGING_VERSION="${VNUM1}.${VNUM2}.0-rc.${VNUM4}"
+        NEW_STAGING_VERSION="${VNUM1}.${VNUM2}.0-rc.0"
         NEW_DEVELOP_VERSION="${VNUM1}.${VNUM2}.0-dev.0"
         echo "Creating new minor release ${NEW_STAGING_VERSION}"
         createTag "${BRANCH_NAME}" "${NEW_STAGING_VERSION}"
@@ -124,7 +124,7 @@ elif [[ "${BRANCH_NAME}" == "staging" ]]; then
         VNUM1_CLEANED="${VNUM1##v}"
         VNUM1="v$((VNUM1_CLEANED+1))"
         #create new tag
-        NEW_STAGING_VERSION="${VNUM1}.0.0-rc.${VNUM4}"
+        NEW_STAGING_VERSION="${VNUM1}.0.0-rc.0"
         NEW_DEVELOP_VERSION="${VNUM1}.0.0-dev.0"
         echo "Creating new major release ${NEW_STAGING_VERSION}"
         createTag "${BRANCH_NAME}" "${NEW_STAGING_VERSION}"
