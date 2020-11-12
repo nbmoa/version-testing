@@ -47,7 +47,7 @@ if [[ "${BRANCH_NAME}" == "develop" ]]; then
     if [[ -z "${LAST_VERSION}" ]]; then
         LAST_VERSION="$(git describe --tags --first-parent  --abbrev=0 || true)"
         if [[ -z "${LAST_VERSION}" ]]; then
-            LAST_VERSION=v0.0.0
+            LAST_VERSION=v0.0.0-dev.0
         fi
     fi
     # Handle the special case that the RC was preparing a new major or minor release
@@ -60,7 +60,7 @@ elif [[ "${BRANCH_NAME}" == "staging" ]]; then
     if [[ -z "${LAST_VERSION}" ]]; then
         LAST_VERSION="$(git describe --tags --first-parent  --abbrev=0 || true)"
         if [[ -z "${LAST_VERSION}" ]]; then
-            LAST_VERSION=v0.0.0
+            LAST_VERSION=v0.0.0-rc.0
         fi
     fi
 elif [[ "${BRANCH_NAME}" == "master" ]]; then
@@ -119,14 +119,14 @@ elif [[ "${BRANCH_NAME}" == "staging" ]]; then
     elif [[ "${ACTION_TYPE}" == "create-minor-rc" ]]; then
         VNUM2="$((VNUM2+1))"
         #create new tag
-        NEW_STAGING_VERSION="${VNUM1}.${VNUM2}.0-rc.0"
+        NEW_STAGING_VERSION="${VNUM1}.${VNUM2}.0-rc.1"
         echo "Creating new minor release ${NEW_STAGING_VERSION}"
         createTag "${BRANCH_NAME}" "${NEW_STAGING_VERSION}"
     elif [[ "${ACTION_TYPE}" == "create-major-rc" ]]; then
         VNUM1_CLEANED="${VNUM1##v}"
         VNUM1="v$((VNUM1_CLEANED+1))"
         #create new tag
-        NEW_STAGING_VERSION="${VNUM1}.0.0-rc.0"
+        NEW_STAGING_VERSION="${VNUM1}.0.0-rc.1"
         echo "Creating new major release ${NEW_STAGING_VERSION}"
         createTag "${BRANCH_NAME}" "${NEW_STAGING_VERSION}"
     else
