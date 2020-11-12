@@ -1,7 +1,9 @@
 #!/bin/bash -e
 
+# createTag <branch to tag> <tag string> [clean-checkout]
+# It will create a tag with given string for the specified branch and will do a clean checkout if set via the last parameter
 createTag() {
-    if [[ "$1" != "develop" ]] && [[ "$1" != "master" ]]; then
+    if [[ "$1" != "develop" ]] && [[ "$1" != "staging" ]] && [[ "$1" != "master" ]] && [[ "$1" != "test-ci" ]]; then
         echo "ERROR: tagging is only allowed on master and develop branches"
         exit 1
     fi
@@ -24,75 +26,119 @@ createTag() {
     fi
 }
 
-getReleaseType() {
+# getActionType
+# It will return the action by based on the comment of the PR
+getActionType() {
     LAST_LOG="$(git log -n 1 --pretty=format:'%s%n%n%b')"
-    for TYPE in "release-patch" "release-minor" "release-major"; do
+    for TYPE in "update-rc" "create-minor-rc" "create-major-rc"; do
         FOUND_TYPE=$(echo "${LAST_LOG}" | grep "${TYPE}")
         if [[ -n "${FOUND_TYPE}" ]]; then
             echo "${TYPE}"
             return
         fi
     done
-    echo "release-patch"
+    echo "update-rc"
 }
 
-# retrieve branch name
+# read out the current branch name and get the latest tag for the branch
+# if no proper tag for the branch was found, search in a more generic way and if still no tag was found, assume v0.0.0
 BRANCH_NAME="$(git branch | sed -n '/\* /s///p')"
 if [[ "${BRANCH_NAME}" == "develop" ]]; then
-    LAST_VERSION="$(git describe --tags --first-parent --match "*dev*" --abbrev=0)"
+    LAST_VERSION="$(git describe --tags --first-parent --match "*dev*" --abbrev=0 || true)"
+    if [[ -z "${LAST_VERSION}" ]]; then
+        LAST_VERSION="$(git describe --tags --first-parent  --abbrev=0 || true)"
+        if [[ -z "${LAST_VERSION}" ]]; then
+            LAST_VERSION=v0.0.0
+        fi
+    fi
+elif [[ "${BRANCH_NAME}" == "staging" ]]; then
+    LAST_VERSION="$(git describe --tags --first-parent --match "*rc*" --abbrev=0 || true)"
+    if [[ -z "${LAST_VERSION}" ]]; then
+        LAST_VERSION="$(git describe --tags --first-parent  --abbrev=0 || true)"
+        if [[ -z "${LAST_VERSION}" ]]; then
+            LAST_VERSION=v0.0.0
+        fi
+    fi
 elif [[ "${BRANCH_NAME}" == "master" ]]; then
-    LAST_VERSION="$(git describe --tags --first-parent --exclude "*dev*" --abbrev=0)"
-    CURR_COMMIT="$(git describe --tags --first-parent --exclude "*dev*")"
+    LAST_VERSION="$(git describe --tags --first-parent --exclude "*dev*" --exclude "*rc*"  --abbrev=0 || true)"
+    CURR_COMMIT="$(git describe --tags --first-parent --exclude "*dev*" --exclude "*rc*" || true)"
+    if [[ -z "${LAST_VERSION}" ]]; then
+        LAST_VERSION="$(git describe --tags --first-parent  --abbrev=0 || true)"
+        if [[ -z "${LAST_VERSION}" ]]; then
+            LAST_VERSION=v0.0.0
+        fi
+    fi
+    # Ensure for released that the commit has no release assigned yet (in case the CI job is run again
     if [[ "${LAST_VERSION}" == "${CURR_COMMIT}" ]]; then
         echo "INFO: This commit is already the release ${LAST_VERSION}"
         exit 0
+    fi
+elif [[ "${BRANCH_NAME}" == "test-ci" ]]; then
+    LAST_VERSION="$(git describe --tags --first-parent --match "*test*" --abbrev=0 || true)"
+    if [[ -z "${LAST_VERSION}" ]]; then
+        LAST_VERSION="$(git describe --tags --first-parent  --abbrev=0 || true)"
+        if [[ -z "${LAST_VERSION}" ]]; then
+            LAST_VERSION=v0.0.0
+        fi
     fi
 fi
 
 # split into array
 VERSION_BITS=(${LAST_VERSION//./ })
-
-#get number parts and increase last one by 1
+#get number parts
 VNUM1="${VERSION_BITS[0]}"
 VNUM2="${VERSION_BITS[1]}"
 VNUM3="${VERSION_BITS[2]}"
 VNUM4="${VERSION_BITS[3]}"
 
+# calculate new tag string and tag the commit
 if [[ "${BRANCH_NAME}" == "develop" ]]; then
     VNUM4="$((VNUM4+1))"
     #create new tag
     NEW_VERSION="${VNUM1}.${VNUM2}.0-dev.${VNUM4}"
     echo "Updating ${LAST_VERSION} to ${NEW_VERSION}"
-    createTag "develop" "${NEW_VERSION}"
-elif [[ "${BRANCH_NAME}" == "master" ]]; then
-    RELEASE_TYPE="$(getReleaseType)"
-    if [[ "${RELEASE_TYPE}" == "release-patch" ]]; then
-        VNUM3="$((VNUM3+1))"
+    createTag "${BRANCH_NAME}" "${NEW_VERSION}"
+elif [[ "${BRANCH_NAME}" == "staging" ]]; then
+    ACTION_TYPE="$(getActionType)"
+    if [[ "${ACTION_TYPE}" == "update-rc" ]]; then
+        VNUM4="$((VNUM4+1))"
         #create new tag
-        NEW_VERSION="${VNUM1}.${VNUM2}.${VNUM3}"
-        echo "Creating new patch release ${NEW_VERSION}"
-        createTag "master" "${NEW_VERSION}"
-    elif [[ "${RELEASE_TYPE}" == "release-minor" ]]; then
+        NEW_VERSION="${VNUM1}.${VNUM2}.0-rc.${VNUM4}"
+        echo "Updating ${LAST_VERSION} to ${NEW_VERSION}"
+        createTag "${BRANCH_NAME}" "${NEW_VERSION}"
+    elif [[ "${ACTION_TYPE}" == "create-minor-rc" ]]; then
         VNUM2="$((VNUM2+1))"
         #create new tag
-        NEW_MASTER_VERSION="${VNUM1}.${VNUM2}.1"
+        NEW_STAGING_VERSION="${VNUM1}.${VNUM2}.0-rc.${VNUM4}"
         NEW_DEVELOP_VERSION="${VNUM1}.${VNUM2}.0-dev.0"
-        echo "Creating new minor release ${NEW_MASTER_VERSION}"
-        createTag "master" "${NEW_MASTER_VERSION}"
+        echo "Creating new minor release ${NEW_STAGING_VERSION}"
+        createTag "${BRANCH_NAME}" "${NEW_STAGING_VERSION}"
         createTag "develop" "${NEW_DEVELOP_VERSION}" "clean-checkout"
-    elif [[ "${RELEASE_TYPE}" == "release-major" ]]; then
+    elif [[ "${ACTION_TYPE}" == "major-major-rc" ]]; then
         VNUM1_CLEANED="${VNUM1##v}"
         VNUM1="v$((VNUM1_CLEANED+1))"
         #create new tag
-        NEW_MASTER_VERSION="${VNUM1}.0.1"
+        NEW_STAGING_VERSION="${VNUM1}.0.0-rc.${VNUM4}"
         NEW_DEVELOP_VERSION="${VNUM1}.0.0-dev.0"
-        echo "Creating new major release ${NEW_MASTER_VERSION}"
-        createTag "master" "${NEW_MASTER_VERSION}"
+        echo "Creating new major release ${NEW_STAGING_VERSION}"
+        createTag "${BRANCH_NAME}" "${NEW_STAGING_VERSION}"
         createTag "develop" "${NEW_DEVELOP_VERSION}" "clean-checkout"
     else
         echo "INFO: this commit has no release-patch, release-minor or release-major specified, not creating a new release version"
         exit 0
     fi
+elif [[ "${BRANCH_NAME}" == "master" ]]; then
+    VNUM3="$((VNUM3+1))"
+    #create new tag
+    NEW_VERSION="${VNUM1}.${VNUM2}.${VNUM3}"
+    echo "Creating new patch release ${NEW_VERSION}"
+    createTag "master" "${NEW_VERSION}"
+elif [[ "${BRANCH_NAME}" == "test-ci" ]]; then
+    VNUM4="$((VNUM4+1))"
+    #create new tag
+    NEW_VERSION="${VNUM1}.${VNUM2}.0-citest.${VNUM4}"
+    echo "Updating ${LAST_VERSION} to ${NEW_VERSION}"
+    createTag "test-ci" "${NEW_VERSION}"
 else
     echo "ERROR: this script is only allowed to be called for branches develop and master"
     exit 1
