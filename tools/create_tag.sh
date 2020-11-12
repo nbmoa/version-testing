@@ -76,7 +76,7 @@ elif [[ "${BRANCH_NAME}" == "master" ]]; then
     fi
     # Handle the special case that the RC was preparing a new major or minor release
     # Then we need to take the RC candidate version as latest version
-    if [[ "$(./${0%/*}/cmp-semver.sh ${LAST_VERSION} ${LAST_RC_VERSION})" == "-1" ]]; then
+    if [[ "$(${0%/*}/cmp-semver.sh ${LAST_VERSION} ${LAST_RC_VERSION})" == "-1" ]]; then
         LAST_VERSION="${LAST_RC_VERSION}"
     fi
 elif [[ "${BRANCH_NAME}" == "test-ci" ]]; then
