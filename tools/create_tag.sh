@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
-# createTag <branch to tag> <tag string> [clean-checkout]
-# It will create a tag with given string for the specified branch and will do a clean checkout if set via the last parameter
+# createTag <branch to tag> <tag string>
+# It will create a tag with given string for the specified branch
 createTag() {
     if [[ "$1" != "develop" ]] && [[ "$1" != "staging" ]] && [[ "$1" != "master" ]] && [[ "$1" != "test-ci" ]]; then
         echo "ERROR: tagging is only allowed on master and develop branches"
@@ -12,18 +12,10 @@ createTag() {
         echo "ERROR: no tag given"
         exit 1
     fi
-    if [[ "$3" == "clean-checkout" ]] ; then
-        git clone -b ${BRANCH_TO_TAG} $(git remote get-url origin) tagging
-        cd tagging
-    fi
     NEW_TAG="$2"
     echo "Tagging branch ${BRANCH_TO_TAG} with ${NEW_TAG}"
     git tag -a -m "Created tag ${NEW_TAG}" "${NEW_TAG}"
     git push -u origin "${NEW_TAG}"
-    if [[ "$3" == "clean-checkout" ]] ; then
-        cd ..
-        rm -rf tagging
-    fi
 }
 
 # getActionType
@@ -45,23 +37,35 @@ getActionType() {
 BRANCH_NAME="$(git branch | sed -n '/\* /s///p')"
 if [[ "${BRANCH_NAME}" == "develop" ]]; then
     LAST_VERSION="$(git describe --tags --first-parent --match "*dev*" --abbrev=0 || true)"
+    LAST_RC_VERSION="$(git describe --tags --match "*rc*" origin/staging || true)"
+    if [[ -z "${LAST_RC_VERSION}" ]]; then
+        LAST_RC_VERSION=v0.0.0-rc.0
+    else
+        LAST_RC_VERSION=${LAST_RC_VERSION#-rc.*}-rc.0
+    fi
     if [[ -z "${LAST_VERSION}" ]]; then
         LAST_VERSION="$(git describe --tags --first-parent  --abbrev=0 || true)"
         if [[ -z "${LAST_VERSION}" ]]; then
-            LAST_VERSION=v0.0.0
+            LAST_VERSION=v0.0.0-dev.0
         fi
+    fi
+    # Handle the special case that the last RC was preparing a new major or minor release
+    # if RC version is has a higher base, continue with the base RC version
+    echo ${0%/*}/cmp-semver.sh ${LAST_VERSION%-rc*} ${LAST_RC_VERSION%-dev*}
+    if [[ "$(${0%/*}/cmp-semver.sh ${LAST_VERSION%-dev*} ${LAST_RC_VERSION%-rc*})" == "-1" ]]; then
+        LAST_VERSION="${LAST_RC_VERSION}"
     fi
 elif [[ "${BRANCH_NAME}" == "staging" ]]; then
     LAST_VERSION="$(git describe --tags --first-parent --match "*rc*" --abbrev=0 || true)"
     if [[ -z "${LAST_VERSION}" ]]; then
         LAST_VERSION="$(git describe --tags --first-parent  --abbrev=0 || true)"
         if [[ -z "${LAST_VERSION}" ]]; then
-            LAST_VERSION=v0.0.0
+            LAST_VERSION=v0.0.0-rc.0
         fi
     fi
 elif [[ "${BRANCH_NAME}" == "master" ]]; then
     LAST_VERSION="$(git describe --tags --first-parent --exclude "*dev*" --exclude "*rc*"  --abbrev=0 || true)"
-    LAST_RC_VERSION="$(git describe --tags --match "*rc*" --abbrev=0 || true)"
+    LAST_RC_VERSION="$(git describe --tags --match "*rc*" --abbrev=0 staging || true)"
     CURR_COMMIT="$(git describe --tags --first-parent --exclude "*dev*" --exclude "*rc*" || true)"
     if [[ -z "${LAST_VERSION}" ]]; then
         LAST_VERSION="$(git describe --tags --first-parent  --abbrev=0 || true)"
@@ -115,20 +119,16 @@ elif [[ "${BRANCH_NAME}" == "staging" ]]; then
     elif [[ "${ACTION_TYPE}" == "create-minor-rc" ]]; then
         VNUM2="$((VNUM2+1))"
         #create new tag
-        NEW_STAGING_VERSION="${VNUM1}.${VNUM2}.0-rc.${VNUM4}"
-        NEW_DEVELOP_VERSION="${VNUM1}.${VNUM2}.0-dev.0"
+        NEW_STAGING_VERSION="${VNUM1}.${VNUM2}.0-rc.1"
         echo "Creating new minor release ${NEW_STAGING_VERSION}"
         createTag "${BRANCH_NAME}" "${NEW_STAGING_VERSION}"
-        createTag "develop" "${NEW_DEVELOP_VERSION}" "clean-checkout"
     elif [[ "${ACTION_TYPE}" == "create-major-rc" ]]; then
         VNUM1_CLEANED="${VNUM1##v}"
         VNUM1="v$((VNUM1_CLEANED+1))"
         #create new tag
-        NEW_STAGING_VERSION="${VNUM1}.0.0-rc.${VNUM4}"
-        NEW_DEVELOP_VERSION="${VNUM1}.0.0-dev.0"
+        NEW_STAGING_VERSION="${VNUM1}.0.0-rc.1"
         echo "Creating new major release ${NEW_STAGING_VERSION}"
         createTag "${BRANCH_NAME}" "${NEW_STAGING_VERSION}"
-        createTag "develop" "${NEW_DEVELOP_VERSION}" "clean-checkout"
     else
         echo "INFO: this commit has no update-rc, create-minor-rc or create-major-rc specified, not creating a new release version"
         exit 0
