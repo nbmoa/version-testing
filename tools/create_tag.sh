@@ -65,7 +65,7 @@ elif [[ "${BRANCH_NAME}" == "staging" ]]; then
     fi
 elif [[ "${BRANCH_NAME}" == "master" ]]; then
     LAST_VERSION="$(git describe --tags --first-parent --exclude "*dev*" --exclude "*rc*"  --abbrev=0 || true)"
-    LAST_RC_VERSION="$(git describe --tags --match "*rc*" --abbrev=0 staging || true)"
+    LAST_RC_VERSION="$(git describe --tags --match "*rc*" --abbrev=0 || true)"
     CURR_COMMIT="$(git describe --tags --first-parent --exclude "*dev*" --exclude "*rc*" || true)"
     if [[ -z "${LAST_VERSION}" ]]; then
         LAST_VERSION="$(git describe --tags --first-parent  --abbrev=0 || true)"
