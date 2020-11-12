@@ -37,7 +37,8 @@ getActionType() {
 BRANCH_NAME="$(git branch | sed -n '/\* /s///p')"
 if [[ "${BRANCH_NAME}" == "develop" ]]; then
     LAST_VERSION="$(git describe --tags --first-parent --match "*dev*" --abbrev=0 || true)"
-    LAST_RC_VERSION="$(git describe --tags --match "*rc*" staging || true)"
+    LAST_RC_VERSION="$(git describe --tags --match "*rc*" origin/staging || true)"
+    echo LAST_VERSION=$LAST_VERSION LAST_RC_VERSION=$LAST_RC_VERSION
     if [[ -z "${LAST_RC_VERSION}" ]]; then
         LAST_RC_VERSION=v0.0.0-rc.0
     else
