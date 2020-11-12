@@ -2,8 +2,6 @@
 
 New major 
 
-a
-
 b
 
 i 
