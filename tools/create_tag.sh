@@ -120,7 +120,7 @@ elif [[ "${BRANCH_NAME}" == "staging" ]]; then
         echo "Creating new minor release ${NEW_STAGING_VERSION}"
         createTag "${BRANCH_NAME}" "${NEW_STAGING_VERSION}"
         createTag "develop" "${NEW_DEVELOP_VERSION}" "clean-checkout"
-    elif [[ "${ACTION_TYPE}" == "major-major-rc" ]]; then
+    elif [[ "${ACTION_TYPE}" == "create-major-rc" ]]; then
         VNUM1_CLEANED="${VNUM1##v}"
         VNUM1="v$((VNUM1_CLEANED+1))"
         #create new tag
@@ -130,7 +130,7 @@ elif [[ "${BRANCH_NAME}" == "staging" ]]; then
         createTag "${BRANCH_NAME}" "${NEW_STAGING_VERSION}"
         createTag "develop" "${NEW_DEVELOP_VERSION}" "clean-checkout"
     else
-        echo "INFO: this commit has no release-patch, release-minor or release-major specified, not creating a new release version"
+        echo "INFO: this commit has no update-rc, create-minor-rc or create-major-rc specified, not creating a new release version"
         exit 0
     fi
 elif [[ "${BRANCH_NAME}" == "master" ]]; then
