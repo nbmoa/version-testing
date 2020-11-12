@@ -37,8 +37,9 @@ getActionType() {
 BRANCH_NAME="$(git branch | sed -n '/\* /s///p')"
 if [[ "${BRANCH_NAME}" == "develop" ]]; then
     LAST_VERSION="$(git describe --tags --first-parent --match "*dev*" --abbrev=0 || true)"
-    LAST_RC_VERSION="$(git describe --tags --match "*rc*" --abbrev=0 || true)"
-    if -z "${LAST_RC_VERSION}" ]]; then
+    LAST_RC_VERSION="$(git describe --tags --match "*rc*" origin/staging || true)"
+    echo LAST_VERSION=$LAST_VERSION LAST_RC_VERSION=$LAST_RC_VERSION
+    if [[ -z "${LAST_RC_VERSION}" ]]; then
         LAST_RC_VERSION=v0.0.0-rc.0
     else
         LAST_RC_VERSION=${LAST_RC_VERSION#-rc.*}-rc.0
@@ -64,7 +65,7 @@ elif [[ "${BRANCH_NAME}" == "staging" ]]; then
     fi
 elif [[ "${BRANCH_NAME}" == "master" ]]; then
     LAST_VERSION="$(git describe --tags --first-parent --exclude "*dev*" --exclude "*rc*"  --abbrev=0 || true)"
-    LAST_RC_VERSION="$(git describe --tags --match "*rc*" --abbrev=0 || true)"
+    LAST_RC_VERSION="$(git describe --tags --match "*rc*" --abbrev=0 staging || true)"
     CURR_COMMIT="$(git describe --tags --first-parent --exclude "*dev*" --exclude "*rc*" || true)"
     if [[ -z "${LAST_VERSION}" ]]; then
         LAST_VERSION="$(git describe --tags --first-parent  --abbrev=0 || true)"
